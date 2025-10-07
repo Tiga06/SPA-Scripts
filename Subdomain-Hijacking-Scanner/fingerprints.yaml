@@ -1,0 +1,60 @@
+services:
+  github:
+    cname: ["github.io", "github.com"]
+    fingerprint: ["There isn't a GitHub Pages site here.", "404 - File not found"]
+    nxdomain: false
+    
+  heroku:
+    cname: ["herokuapp.com", "herokussl.com"]
+    fingerprint: ["No such app", "There's nothing here, yet."]
+    nxdomain: false
+    
+  aws_s3:
+    cname: ["s3.amazonaws.com", "s3-website"]
+    fingerprint: ["NoSuchBucket", "The specified bucket does not exist"]
+    nxdomain: false
+    
+  azure:
+    cname: ["azurewebsites.net", "cloudapp.net", "trafficmanager.net"]
+    fingerprint: ["404 Web Site not found", "This site is stopped"]
+    nxdomain: false
+    
+  shopify:
+    cname: ["myshopify.com"]
+    fingerprint: ["Sorry, this shop is currently unavailable", "Only one step left!"]
+    nxdomain: false
+    
+  fastly:
+    cname: ["fastly.com"]
+    fingerprint: ["Fastly error: unknown domain"]
+    nxdomain: false
+    
+  cloudfront:
+    cname: ["cloudfront.net"]
+    fingerprint: ["Bad Request", "The request could not be satisfied"]
+    nxdomain: false
+    
+  bitbucket:
+    cname: ["bitbucket.org"]
+    fingerprint: ["Repository not found"]
+    nxdomain: false
+    
+  tumblr:
+    cname: ["tumblr.com"]
+    fingerprint: ["Whatever you were looking for doesn't currently exist"]
+    nxdomain: false
+    
+  wordpress:
+    cname: ["wordpress.com"]
+    fingerprint: ["Do you want to register"]
+    nxdomain: false
+    
+  ghost:
+    cname: ["ghost.io"]
+    fingerprint: ["The thing you were looking for is no longer here"]
+    nxdomain: false
+    
+  surge:
+    cname: ["surge.sh"]
+    fingerprint: ["project not found"]
+    nxdomain: false

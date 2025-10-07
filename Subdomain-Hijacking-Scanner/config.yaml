@@ -1,0 +1,25 @@
+subdomain_sources:
+  - crt.sh
+  - sublist3r
+  - amass
+  - subfinder
+
+dns_servers:
+  - 8.8.8.8
+  - 1.1.1.1
+  - 9.9.9.9
+
+http_settings:
+  timeout: 10
+  max_redirects: 5
+  user_agent: "SubjackScanner/1.0"
+
+threading:
+  max_workers: 50
+  dns_workers: 100
+
+output:
+  formats: ["json", "csv", "txt"]
+  include_screenshots: false
+  
+fingerprints_file: "fingerprints.yaml"
