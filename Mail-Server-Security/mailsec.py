@@ -87,51 +87,44 @@ class MailSecurityScanner:
         self.timeout = timeout
         self.verbose = verbose
         
-        # Setup multiple DNS resolvers for redundancy
+        # Setup DNS resolvers (optimized for speed)
         self.dns_resolvers = []
+        
+        # Faster timeout for API usage
+        dns_timeout = min(timeout, 5)  # Cap at 5 seconds for faster scans
         
         # Primary resolver (system default)
         primary_resolver = dns.resolver.Resolver()
-        primary_resolver.timeout = timeout
-        primary_resolver.lifetime = timeout
+        primary_resolver.timeout = dns_timeout
+        primary_resolver.lifetime = dns_timeout
         self.dns_resolvers.append(primary_resolver)
         
-        # Fallback public DNS resolvers
+        # Only use fast public DNS (Google and Cloudflare)
         public_dns_servers = [
             ['8.8.8.8', '8.8.4.4'],        # Google DNS
             ['1.1.1.1', '1.0.0.1'],        # Cloudflare DNS
-            ['208.67.222.222', '208.67.220.220'],  # OpenDNS
-            ['9.9.9.9', '149.112.112.112']  # Quad9 DNS
         ]
         
         for dns_servers in public_dns_servers:
             resolver = dns.resolver.Resolver()
             resolver.nameservers = dns_servers
-            resolver.timeout = timeout
-            resolver.lifetime = timeout
+            resolver.timeout = dns_timeout
+            resolver.lifetime = dns_timeout
             self.dns_resolvers.append(resolver)
         
-        # Enhanced DKIM selectors (more comprehensive)
+        # DKIM selectors (most common only for speed)
         self.dkim_selectors = [
-            'default', 'selector1', 'selector2', 'google', 'dkim', 'mail',
-            'smtp', 'key1', 'key2', 'k1', 'k2', 'dk', 'dkim1', 'dkim2',
-            'email', 'mailgun', 'mandrill', 'sendgrid', 'amazonses',
-            's1', 's2', 'mxvault', 'protonmail', 'outlook', 'yahoo',
-            '20161025', '20210112', 'beta', 'gamma', 'delta', 'alpha'
+            'default', 'selector1', 'selector2', 'google', 'dkim',
+            'key1', 'key2', 'k1', 'k2', 'mail', 's1', 's2'
         ]
         
-        # Reliable blacklist providers (removed problematic ones)
+        # Fast blacklist providers (most reliable and fast)
         self.blacklists = [
             'zen.spamhaus.org',
             'bl.spamcop.net',
-            'b.barracudacentral.org',
-            'dnsbl.sorbs.net',
-            'spam.dnsbl.sorbs.net',
             'cbl.abuseat.org',
-            'psbl.surriel.com',
             'sbl.spamhaus.org',
-            'xbl.spamhaus.org',
-            'pbl.spamhaus.org'
+            'xbl.spamhaus.org'
         ]
         
         # Initialize results storage
@@ -152,6 +145,10 @@ class MailSecurityScanner:
     
     def log_message(self, message, level="INFO"):
         """Enhanced logging with timestamps and colors"""
+        # Skip all logging if no_console is enabled
+        if getattr(self, 'no_console', False):
+            return
+            
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         color_map = {
@@ -364,8 +361,8 @@ class MailSecurityScanner:
             
             return None, None
         
-        # Use parallel checking for better performance
-        with ThreadPoolExecutor(max_workers=10) as executor:
+        # Use parallel checking for better performance (reduced workers to avoid DNS rate limits)
+        with ThreadPoolExecutor(max_workers=5) as executor:
             future_to_selector = {
                 executor.submit(check_dkim_selector, selector): selector 
                 for selector in self.dkim_selectors
@@ -602,10 +599,10 @@ class MailSecurityScanner:
                 reversed_ip = '.'.join(reversed(ip.split('.')))
                 query_host = f"{reversed_ip}.{blacklist}"
                 
-                # Use shorter timeout for blacklist checks
+                # Use faster timeout for blacklist checks
                 resolver = dns.resolver.Resolver()
-                resolver.timeout = 5
-                resolver.lifetime = 5
+                resolver.timeout = 3
+                resolver.lifetime = 3
                 
                 # Perform DNS lookup
                 answers = resolver.resolve(query_host, 'A')
@@ -1274,6 +1271,8 @@ Output Formats:
     parser.add_argument('--verbose', '-v', action='store_true', help='Enable verbose output with debug info')
     parser.add_argument('--no-console', action='store_true', help='Skip console output (useful with exports)')
     parser.add_argument('--smtp-check', action='store_true', help='Enable SMTP connectivity testing (most mail servers block external access)')
+    parser.add_argument('--blacklist-check', action='store_true', help='Enable blacklist checking (adds ~10 seconds)')
+    parser.add_argument('--fast', action='store_true', help='Fast mode: reduced timeouts and fewer checks')
     
     # Export options
     parser.add_argument('--export-json', action='store_true', help='Export results to JSON')
@@ -1294,8 +1293,11 @@ Output Formats:
         sys.exit(1)
     
     # Initialize enhanced scanner
-    scanner = MailSecurityScanner(timeout=args.timeout, verbose=args.verbose)
+    timeout = 5 if args.fast else args.timeout  # Fast mode uses 5 second timeout
+    scanner = MailSecurityScanner(timeout=timeout, verbose=args.verbose)
     scanner.smtp_check_enabled = args.smtp_check
+    scanner.blacklist_check_enabled = args.blacklist_check
+    scanner.no_console = args.no_console
     
     # Print enhanced banner
     if not args.no_console:
@@ -1333,7 +1335,7 @@ Output Formats:
                 exported_files.append(filename)
         
         # Summary
-        if exported_files:
+        if exported_files and not args.no_console:
             print(f"\n{Colors.GREEN}Exported files:{Colors.END}")
             for file in exported_files:
                 print(f"  • {file}")
@@ -1352,8 +1354,9 @@ Output Formats:
             exit_code = 1
             status = "POOR"
         
-        print(f"\n{Colors.CYAN}Scan completed: {status} (Score: {scan_result.security_score}/100){Colors.END}")
-        print(f"{Colors.CYAN}Exit code: {exit_code}{Colors.END}")
+        if not args.no_console:
+            print(f"\n{Colors.CYAN}Scan completed: {status} (Score: {scan_result.security_score}/100){Colors.END}")
+            print(f"{Colors.CYAN}Exit code: {exit_code}{Colors.END}")
         sys.exit(exit_code)
         
     except KeyboardInterrupt:

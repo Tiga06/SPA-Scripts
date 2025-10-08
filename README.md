@@ -16,6 +16,7 @@ This toolkit provides 6 specialized security assessment tools accessible through
 | **Subdomain Hijacking Scanner** | Subdomain takeover detection | Multi-source enumeration, service fingerprinting, vulnerability assessment |
 | **Mail Server Security** | Email authentication analysis | SPF/DKIM/DMARC validation, security scoring, comprehensive reporting |
 | **DNSSEC Analysis** | DNS security validation | DNSSEC chain validation, trust anchor verification, status differentiation |
+| **Nuclei Vulnerability Scanner** | Known vulnerability detection | CVE scanning, template-based detection, caching for performance |
 
 ## 🚀 Quick Start
 
@@ -80,6 +81,7 @@ All endpoints use consistent `domain` parameter and return JSON responses.
 | `/api/subjack` | POST | Subdomain hijacking assessment |
 | `/api/mail-security` | POST | Mail server security analysis |
 | `/api/dnssec-analysis` | POST | DNSSEC security validation |
+| `/api/vulnscan` | POST | Nuclei vulnerability scanning |
 
 ### Example Usage
 
@@ -108,6 +110,11 @@ curl -X POST http://localhost:5000/api/mail-security \
 curl -X POST http://localhost:5000/api/dnssec-analysis \
   -H "Content-Type: application/json" \
   -d '{"domain": "example.com", "resolver": "8.8.8.8"}'
+
+# Vulnerability scanning
+curl -X POST http://localhost:5000/api/vulnscan \
+  -H "Content-Type: application/json" \
+  -d '{"domain": "https://example.com"}'
 ```
 
 ### Response Format
@@ -177,10 +184,15 @@ Each tool supports multiple output formats:
 - nmap (for port enumeration)
 - OpenSSL (for certificate validation)
 - curl (for HTTP analysis)
+- nuclei (for vulnerability scanning)
 
 ### Installation
 ```bash
 pip install -r requirements.txt
+
+# Install Nuclei (required for vulnerability scanning)
+go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
+# or download from: https://github.com/projectdiscovery/nuclei/releases
 ```
 
 ## 🔒 Security Considerations

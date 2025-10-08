@@ -465,3 +465,129 @@ curl -X POST http://localhost:5000/api/mail-security \
 - **Scaling**: Consider containerization for horizontal scaling
 - **Rate Limiting**: Implement rate limiting to prevent abuse
 - **CORS**: Configure CORS headers for web application integration
+
+## Nuclei Vulnerability Scanner
+
+**Endpoint:** `POST /api/vulnscan`
+
+**Description:** Performs automated vulnerability scanning using the Nuclei engine with intelligent caching for faster subsequent scans.
+
+### Request Format
+
+```json
+{
+  "domain": "http://target.com"
+}
+```
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `domain` | string | Yes | Target domain/URL to scan for vulnerabilities |
+
+### Response Format
+
+```json
+{
+  "success": true,
+  "data": {
+    "target": "http://testphp.vulnweb.com",
+    "scan_status": "completed",
+    "total_findings": 3,
+    "findings": [
+      {
+        "id": "CVE-2024-12345",
+        "name": "WordPress Plugin XSS",
+        "severity": "high",
+        "matched": "http://testphp.vulnweb.com/wp-content/plugin",
+        "description": "Cross-site scripting vulnerability in WordPress plugin."
+      },
+      {
+        "id": "generic-misconfig",
+        "name": "Server Misconfiguration",
+        "severity": "medium",
+        "matched": "http://testphp.vulnweb.com/",
+        "description": "Header misconfiguration detected."
+      }
+    ],
+    "cache_fingerprint": "f4b93d8c12.json",
+    "execution_time": "45.32s",
+    "cache_hit": false,
+    "timestamp": "2025-10-08T03:15:00.000000"
+  }
+}
+```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `target` | string | The scanned target URL |
+| `scan_status` | string | Status of the scan (completed/failed) |
+| `total_findings` | integer | Number of vulnerabilities found |
+| `findings` | array | List of vulnerability findings |
+| `cache_fingerprint` | string | Cache file identifier |
+| `execution_time` | string | Time taken for the scan |
+| `cache_hit` | boolean | Whether result was served from cache |
+| `timestamp` | string | ISO timestamp of the scan |
+
+### Finding Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Template/CVE identifier |
+| `name` | string | Vulnerability name |
+| `severity` | string | Severity level (low/medium/high/critical) |
+| `matched` | string | URL where vulnerability was found |
+| `description` | string | Detailed description of the vulnerability |
+
+### Caching
+
+- Results are cached for 24 hours
+- Cache files stored in `/cache/` directory
+- Subsequent requests return cached results instantly (`cache_hit: true`)
+- Cache automatically expires after 24 hours
+
+### Example Usage
+
+```bash
+# Basic vulnerability scan
+curl -X POST http://localhost:5000/api/vulnscan \
+  -H "Content-Type: application/json" \
+  -d '{"domain": "http://testphp.vulnweb.com"}'
+
+# Scan with HTTPS
+curl -X POST http://localhost:5000/api/vulnscan \
+  -H "Content-Type: application/json" \
+  -d '{"domain": "https://example.com"}'
+```
+
+### Error Responses
+
+```json
+{
+  "success": false,
+  "error": "Nuclei not found. Please install nuclei first."
+}
+```
+
+```json
+{
+  "success": false,
+  "error": "Scan timed out after 3 minutes"
+}
+```
+
+### Prerequisites
+
+- Nuclei must be installed and available in PATH
+- Install with: `go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest`
+- Or download from: https://github.com/projectdiscovery/nuclei/releases
+
+### Performance Notes
+
+- First scan: 30-180 seconds depending on target
+- Cached results: < 1 second response time
+- Scans for low, medium, high, and critical severity vulnerabilities
+- Timeout: 3 minutes maximum per scan
