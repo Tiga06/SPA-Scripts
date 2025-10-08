@@ -1,0 +1,8 @@
+Flask==2.3.3
+requests==2.31.0
+dnspython==2.4.2
+colorama==0.4.6
+
+# Note: Nuclei must be installed separately:
+# go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
+# or download from: https://github.com/projectdiscovery/nuclei/releases
