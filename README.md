@@ -24,8 +24,8 @@ This toolkit provides 6 specialized security assessment tools accessible through
 
 ```bash
 # Clone the repository
-git clone <repository-url>
-cd security-assessment-toolkit
+git clone -b master --single-branch https://github.com/Tiga06/SPA-Scripts.git
+cd SPA-Scripts
 
 # Install dependencies
 pip install -r requirements.txt
